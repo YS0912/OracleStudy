@@ -51,7 +51,7 @@
 --    ▷ USER is "SYS"
 --    ▶ 접속한 사용자 조회
 
---    SQL> select status from v$instance;
+--    SQL> select status from instance;
 --    ▷
 --    /*
 --    STATUS
