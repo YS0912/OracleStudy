@@ -308,7 +308,7 @@ FROM TBL_JUMUNBACKUP;
 
 -- ▼ 지금까지 주문 받은 데이터를 통해
 --    제품별 총 주문량을 조회할 수 있는 쿼리문을 구성한다.
-SELECT JECODE "제품명", SUM(JUSU) "주문량"
+SELECT NVL(JECODE, '총  계') "제품명", SUM(JUSU) "주문량"
 FROM
 (
     SELECT *
