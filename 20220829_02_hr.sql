@@ -32,12 +32,21 @@ FROM USER_TABLES;
 -- 조건이 있는 컬럼 조회
 SELECT *
 FROM VIEW_CONSTCHECK
-WHERE TABLE_NAME IN ('COUNTRIES', 'DEPARTMENTS', 'EMPLOYEES', 'JOB_HISTORY', 'JOBS', 'LOCATIONS', 'REGIONS');
+WHERE TABLE_NAME IN ('COUNTRIES', 'DEPARTMENTS', 'EMPLOYEES', 'JOB_HISTORY', 'JOBS', 'LOCATIONS', 'REGIONS')
+ORDER BY COLUMN_NAME;
 
 -- DEFAULT 표현식 조회
 SELECT *
 FROM USER_TAB_COLUMNS
 WHERE TABLE_NAME = '테이블명';
+
+-- 시퀸스 검색
+SELECT *
+FROM ALL_SEQUENCES
+WHERE SEQUENCE_OWNER = 'HR';
+ -- DEPARTMENTS_SEQ : DEPARTMENT_ID
+ -- EMPLOYEES_SEQ : EMPLOYEES_ID
+ -- LOCATIONS_SEQ : LOCATIONS_ID
 
 
 -- ▼ JOBS1 구성 ---------------------------------------------------------------
@@ -124,6 +133,7 @@ VALUES('HR_REP', 'Human Resources Representative', 4000, 9000);
 
 INSERT INTO JOBS1(JOB_ID, JOB_TITLE, MIN_SALARY, MAX_SALARY)
 VALUES('PR_REP', 'Public Relations Representative', 4500, 10500);
+
 
 -- ▼ REGIONS1 구성 ------------------------------------------------------------
 
@@ -271,6 +281,10 @@ SELECT *
 FROM VIEW_CONSTCHECK
 WHERE TABLE_NAME = 'LOCATIONS';
 
+SELECT *
+FROM USER_TAB_COLUMNS
+WHERE TABLE_NAME = 'LOCATIONS';
+
 -- 테이블 구성
 CREATE TABLE LOCATIONS1
 ( LOCATION_ID    NUMBER(4)    -- NOT NULL       -- P    LOC_ID_PK
@@ -295,7 +309,7 @@ NOCACHE;                 -- 캐시 사용 안함(없음)
 
 -- 원본 데이터 조회
 SELECT *
-FROM LOCATIONS1;
+FROM LOCATIONS;
 
 -- 인서트 문
 INSERT INTO LOCATIONS1(LOCATION_ID, STREET_ADDRESS, POSTAL_CODE, CITY, STATE_PROVINCE, COUNTRY_ID)
@@ -369,8 +383,8 @@ VALUES(LOCATIONS1_SEQ.NEXTVAL, 'Mariano Escobedo 9991', '11932', 'Mexico City', 
 
 -- FK 제약조건 추가
 ALTER TABLE LOCATIONS1
-ADD ( , CONSTRAINT LOC1_C_ID_FK FOREIGN KEY(COUNTRY_ID)
-                   REFERENCES COUNTRIES1(COUNTRY_ID) );
+ADD ( CONSTRAINT LOC1_C_ID_FK FOREIGN KEY(COUNTRY_ID)
+                 REFERENCES COUNTRIES1(COUNTRY_ID) );
 -- Table LOCATIONS1이(가) 변경되었습니다.
 
 
@@ -504,7 +518,7 @@ DESC EMPLOYEES;
 
 SELECT *
 FROM VIEW_CONSTCHECK
-WHERE TABLE_NAME = 'EMPLOYEES1';
+WHERE TABLE_NAME = 'EMPLOYEES';
 
 -- 테이블 구성
 CREATE TABLE EMPLOYEES1
@@ -862,14 +876,14 @@ INSERT INTO EMPLOYEES1(EMPLOYEE_ID, FIRST_NAME, LAST_NAME, EMAIL, PHONE_NUMBER, 
 VALUES(EMPLOYEES1_SEQ.NEXTVAL, 'William', 'Gietz', 'WGIETZ', '515.123.8181', TO_DATE('2002-06-07', 'YYYY-MM-DD'), 'AC_ACCOUNT', 8300, NULL, 205, 110);
 
 -- FK 제약조건 추가
-ALTER TABLE EMPLOYEES
+ALTER TABLE EMPLOYEES1
 ADD ( CONSTRAINT EMP1_DEPT_FK FOREIGN KEY(DEPARTMENT_ID)
                  REFERENCES DEPARTMENTS1(DEPARTMENT_ID)
     , CONSTRAINT EMP1_JOB_FK FOREIGN KEY(JOB_ID)
                  REFERENCES JOBS1(JOB_ID)
     , CONSTRAINT EMP1_MANAGER_FK FOREIGN KEY(MANAGER_ID)
                  REFERENCES EMPLOYEES1(EMPLOYEE_ID) );
--- Table EMPLOYEES이(가) 변경되었습니다.
+-- Table EMPLOYEES1이(가) 변경되었습니다.
 
 
 -- ▼ JOB_HISTORY1 구성 -------------------------------------------------------
@@ -937,13 +951,75 @@ ADD ( CONSTRAINT JHIST1_JOB_FK FOREIGN KEY(JOB_ID)
     , CONSTRAINT JHIST1_DEPT_FK FOREIGN KEY(DEPARTMENT_ID)
                  REFERENCES DEPARTMENTS1(DEPARTMENT_ID) );
 
--- 시퀸스 검색
+
+-- ▼ 코멘트 작업 --------------------------------------------------------------
+
+-- 원본 코멘트 조회
 SELECT *
-  FROM all_sequences
- WHERE sequence_owner = 'HR';
- -- DEPARTMENTS_SEQ : DEPARTMENT_ID
- -- EMPLOYEES_SEQ : EMPLOYEES_ID
- -- LOCATIONS_SEQ : LOCATIONS_ID
+FROM USER_TAB_COMMENTS
+WHERE TABLE_NAME IN ('COUNTRIES', 'DEPARTMENTS', 'EMPLOYEES', 'JOB_HISTORY', 'JOBS', 'LOCATIONS', 'REGIONS');
+
+SELECT *
+FROM USER_COL_COMMENTS
+WHERE TABLE_NAME IN ('COUNTRIES', 'DEPARTMENTS', 'EMPLOYEES', 'JOB_HISTORY', 'JOBS', 'LOCATIONS', 'REGIONS');
+
+-- 테이블 코멘트 추가
+COMMENT ON TABLE COUNTRIES1 IS 'country table. Contains 25 rows. References with locations table.';
+COMMENT ON TABLE DEPARTMENTS1 IS 'Departments table that shows details of departments where employees work. Contains 27 rows; references with locations, employees, and job_history tables.';
+COMMENT ON TABLE EMPLOYEES1 IS 'employees table. Contains 107 rows. References with departments, jobs, job_history tables. Contains a self reference.';
+COMMENT ON TABLE JOBS1 IS 'jobs table with job titles and salary ranges. Contains 19 rows. References with employees and job_history table.';
+COMMENT ON TABLE JOB_HISTORY1 IS 'Table that stores job history of the employees. If an employee changes departments within the job or changes jobs within the department, new rows get inserted into this table with old job information of the employee. Contains a complex primary key: employee_id+start_date. Contains 25 rows. References with jobs, employees, and departments tables.';
+COMMENT ON TABLE LOCATIONS1 IS 'Locations table that contains specific address of a specific office, warehouse, and/or production site of a company. Does not store addresses / locations of customers. Contains 23 rows; references with the departments and countries tables.';
+
+-- 컬럼 코멘트 추가
+COMMENT ON COLUMN COUNTRIES1.COUNTRY_ID IS 'Primary key of countries table.';
+COMMENT ON COLUMN COUNTRIES1.COUNTRY_NAME IS 'Country name';
+COMMENT ON COLUMN COUNTRIES1.REGION_ID IS 'Region ID for the country. Foreign key to region_id column in the departments table.';
+
+COMMENT ON COLUMN DEPARTMENTS1.DEPARTMENT_ID IS 'Primary key column of departments table.';
+COMMENT ON COLUMN DEPARTMENTS1.DEPARTMENT_NAME IS 'A not null column that shows name of a department. Administration, Marketing, Purchasing, Human Resources, Shipping, IT, Executive, Public Relations, Sales, Finance, and Accounting.';
+COMMENT ON COLUMN DEPARTMENTS1.MANAGER_ID IS 'Manager_id of a department. Foreign key to employee_id column of employees table. The manager_id column of the employee table references this column.';
+COMMENT ON COLUMN DEPARTMENTS1.LOCATION_ID IS 'Location id where a department is located. Foreign key to location_id column of locations table.';
+
+COMMENT ON COLUMN EMPLOYEES1.EMPLOYEE_ID IS 'Primary key of employees table.';
+COMMENT ON COLUMN EMPLOYEES1.FIRST_NAME IS 'First name of the employee. A not null column.';
+COMMENT ON COLUMN EMPLOYEES1.LAST_NAME IS 'Last name of the employee. A not null column.';
+COMMENT ON COLUMN EMPLOYEES1.EMAIL IS 'Email id of the employee';
+COMMENT ON COLUMN EMPLOYEES1.PHONE_NUMBER IS 'Phone number of the employee; includes country code and area code';
+COMMENT ON COLUMN EMPLOYEES1.HIRE_DATE IS 'Date when the employee started on this job. A not null column.';
+COMMENT ON COLUMN EMPLOYEES1.JOB_ID IS 'Current job of the employee; foreign key to job_id column of the jobs table. A not null column.';
+COMMENT ON COLUMN EMPLOYEES1.SALARY IS 'Monthly salary of the employee. Must be greater than zero (enforced by constraint emp_salary_min)';
+COMMENT ON COLUMN EMPLOYEES1.COMMISSION_PCT IS 'Commission percentage of the employee; Only employees in sales department elgible for commission percentage';
+COMMENT ON COLUMN EMPLOYEES1.MANAGER_ID IS 'Manager id of the employee; has same domain as manager_id in departments table. Foreign key to employee_id column of employees table.(useful for reflexive joins and CONNECT BY query)';
+COMMENT ON COLUMN EMPLOYEES1.DEPARTMENT_ID IS 'Department id where employee works; foreign key to department_id column of the departments table';
+
+COMMENT ON COLUMN JOBS1.JOB_ID IS 'Primary key of jobs table.';
+COMMENT ON COLUMN JOBS1.JOB_TITLE IS 'A not null column that shows job title, e.g. AD_VP, FI_ACCOUNTANT';
+COMMENT ON COLUMN JOBS1.MIN_SALARY IS 'Minimum salary for a job title.';
+COMMENT ON COLUMN JOBS1.MAX_SALARY IS 'Maximum salary for a job title';
+
+COMMENT ON COLUMN JOB_HISTORY1.EMPLOYEE_ID IS 'A not null column in the complex primary key employee_id+start_date. Foreign key to employee_id column of the employee table';
+COMMENT ON COLUMN JOB_HISTORY1.START_DATE IS 'A not null column in the complex primary key employee_id+start_date. Must be less than the end_date of the job_history table. (enforced by constraint jhist_date_interval)';
+COMMENT ON COLUMN JOB_HISTORY1.END_DATE IS 'Last day of the employee in this job role. A not null column. Must be greater than the start_date of the job_history table.(enforced by constraint jhist_date_interval)';
+COMMENT ON COLUMN JOB_HISTORY1.JOB_ID IS 'Job role in which the employee worked in the past; foreign key to job_id column in the jobs table. A not null column.';
+COMMENT ON COLUMN JOB_HISTORY1.DEPARTMENT_ID IS 'Department id in which the employee worked in the past; foreign key to deparment_id column in the departments table';
+
+COMMENT ON COLUMN LOCATIONS1.LOCATION_ID IS 'Primary key of locations table';
+COMMENT ON COLUMN LOCATIONS1.STREET_ADDRESS IS 'Street address of an office, warehouse, or production site of a company. Contains building number and street name';
+COMMENT ON COLUMN LOCATIONS1.POSTAL_CODE IS 'Postal code of the location of an office, warehouse, or production site of a company.';
+COMMENT ON COLUMN LOCATIONS1.CITY IS 'A not null column that shows city where an office, warehouse, or production site of a company is located.';
+COMMENT ON COLUMN LOCATIONS1.STATE_PROVINCE IS 'State or Province where an office, warehouse, or production site of a company is located.';
+COMMENT ON COLUMN LOCATIONS1.COUNTRY_ID IS 'Country where an office, warehouse, or production site of a company is located. Foreign key to country_id column of the countries table.';
+
+-- 확인
+SELECT *
+FROM USER_TAB_COMMENTS
+WHERE TABLE_NAME IN ('COUNTRIES1', 'DEPARTMENTS1', 'EMPLOYEES1', 'JOB_HISTORY1', 'JOBS1', 'LOCATIONS1', 'REGIONS1');
+
+SELECT *
+FROM USER_COL_COMMENTS
+WHERE TABLE_NAME IN ('COUNTRIES1', 'DEPARTMENTS1', 'EMPLOYEES1', 'JOB_HISTORY1', 'JOBS1', 'LOCATIONS1', 'REGIONS1');
+
 
 
 
