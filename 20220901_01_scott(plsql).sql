@@ -388,7 +388,7 @@ IS
     V_NUM   TBL_INSA.NUM%TYPE;
 BEGIN
     -- NUM 계산
-    SELECT MAX(NVL(NUM, 0)) + 1 INTO V_NUM      -- 나 : COUNT(*) 사용
+    SELECT NVL(MAX(NUM), 0) + 1 INTO V_NUM      -- 나 : COUNT(*) 사용
     FROM TBL_INSA;
     
     INSERT INTO TBL_INSA(NUM, NAME, SSN, IBSADATE, CITY, TEL, BUSEO, JIKWI, BASICPAY, SUDANG)
@@ -402,7 +402,12 @@ END;
 SELECT *
 FROM TBL_INSA;
 
-
+-- 보충 설명
+SELECT 출고번호
+FROM TBL_출고;
+-- 조회 결과 없음
+-- ▷ 따라서 NVL(출고번호, 0) 처리 후 MAX() 처리를 해도 원하는 값이 나오지 않는다.
+--    NVL(MAX(출고번호), 0)로 처리하자!
 
 
 
